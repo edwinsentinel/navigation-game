@@ -1,0 +1,11 @@
+{
+  "name": "navigation-backend",
+  "version": "1.0.1",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "winston": "^3.10.0"
+  }
+}

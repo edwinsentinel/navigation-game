@@ -1,0 +1,19 @@
+# Configuring Filebeat to collect logs from Docker containers
+filebeat.inputs:
+  - type: container # Specifies that the input type is container logs
+    paths: ["/var/lib/docker/containers/*/*.log"] # Path to Docker container log files
+    processors:
+      - add_docker_metadata: ~ # Adds metadata about the Docker container (e.g., container ID, image, labels)
+      - decode_json_fields: # Decodes JSON-formatted log messages into structured fields
+          fields: ["message"] # Specifies the field to decode (in this case, the "message" field)
+          target: "" # Decodes fields into the root of the event (no nested object)
+          overwrite_keys: true # Overwrites existing fields with the same name
+
+# Configuring the output to send logs to Elasticsearch
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"] # URL of the Elasticsearch instance
+  index: "observability-%{+yyyy.MM.dd}" # Index pattern for storing logs, with daily indices
+
+# Configuring the Elasticsearch index template
+setup.template.name: "observability" # Name of the index template
+setup.template.pattern: "observability-*" # Pattern for indices that the template applies to

@@ -1,0 +1,51 @@
+version: "3.9" # Specifies the Docker Compose file format version
+
+services:
+  # Frontend service
+  frontend:
+    build: ./frontend # Builds the frontend image from the Dockerfile in the ./frontend directory
+    ports:
+      - "8080:80" # Maps port 80 in the container to port 8080 on the host
+    depends_on:
+      - backend # Ensures the backend service starts before the frontend
+
+  # Backend service
+  backend:
+    build: ./backend # Builds the backend image from the Dockerfile in the ./backend directory
+    ports:
+      - "3000:3000" # Maps port 3000 in the container to port 3000 on the host
+    environment:
+      - NODE_ENV=production # Sets the Node.js environment to production
+      - LOG_LEVEL=info # Sets the logging level to info
+    depends_on:
+      - elasticsearch # Ensures the Elasticsearch service starts before the backend
+
+  # Elasticsearch service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4 # Uses the official Elasticsearch image
+    environment:
+      - discovery.type=single-node # Configures Elasticsearch to run as a single-node cluster
+      - xpack.security.enabled=false # Disables security features (e.g., authentication) for simplicity
+    ports:
+      - "9200:9200" # Maps port 9200 in the container to port 9200 on the host
+
+  # Kibana service
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4 # Uses the official Kibana image
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200 # Configures Kibana to connect to Elasticsearch
+    ports:
+      - "5601:5601" # Maps port 5601 in the container to port 5601 on the host
+    depends_on:
+      - elasticsearch # Ensures the Elasticsearch service starts before Kibana
+
+  # Filebeat service
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.13.4 # Uses the official Filebeat image
+    user: root # Runs Filebeat as the root user (required for accessing Docker logs)
+    volumes:
+      - ./monitoring/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro # Mounts the Filebeat configuration file as read-only
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Mounts the Docker container logs directory as read-only
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Mounts the Docker socket as read-only for metadata collection
+    depends_on:
+      - elasticsearch # Ensures the Elasticsearch service starts before Filebeat
